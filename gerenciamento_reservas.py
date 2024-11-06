@@ -1,8 +1,7 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import os
-
-
+print("Caminho do arquivo em execução:", os.path.abspath(__file__))
 class GerenciamentoReservas:
     def __init__(self, reservas_path, parceiros_path, proprietarios_path):
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -138,7 +137,31 @@ class GerenciamentoReservas:
                       a_receber_parceiros=0.0, a_pagar_parceiros=0.0,
                       email_responsavel=None, telefone_responsavel=None, documento_responsavel=None,
                       pago=0.0, a_pagar=0.0):
-    # Dados da nova reserva com todas as colunas incluídas
+     """Adiciona uma nova reserva ao DataFrame de reservas e salva no arquivo Excel associado.
+
+     Args:
+        nome (str): Nome do hóspede.
+        data_entrada (str): Data de entrada da reserva.
+        data_saida (str): Data de saída da reserva.
+        numero_apartamento (int): Número do apartamento.
+        valor_hospedagem (float): Valor total da hospedagem.
+        valor_proprietario (float): Valor destinado ao proprietário.
+        nome_proprietario (str): Nome do proprietário do imóvel.
+        quantidade_pessoas (int): Número de pessoas na reserva.
+        condominio (str): Nome do condomínio.
+        bloco (str): Bloco do apartamento.
+        endereco (str): Endereço do imóvel.
+        status (str): Status do pagamento.
+        a_receber_parceiros (float, opcional): Valor a receber de parceiros. Padrão é 0.0.
+        a_pagar_parceiros (float, opcional): Valor a pagar para parceiros. Padrão é 0.0.
+        email_responsavel (str, opcional): Email do responsável pela reserva. Padrão é None.
+        telefone_responsavel (str, opcional): Telefone do responsável pela reserva. Padrão é None.
+        documento_responsavel (str, opcional): Documento do responsável pela reserva. Padrão é None.
+        pago (float, opcional): Valor já pago. Padrão é 0.0.
+        a_pagar (float, opcional): Valor ainda a pagar. Padrão é 0.0.
+     """
+
+     # Dados da nova reserva com todas as colunas incluídas
      new_data = pd.DataFrame({
         'Nome do hóspede': [nome],
         'Data de entrada': [data_entrada],
@@ -161,9 +184,10 @@ class GerenciamentoReservas:
         'Documento do responsável': [documento_responsavel]
     })
 
-    # Adiciona a nova reserva ao DataFrame e salva no Excel
+     # Adiciona a nova reserva ao DataFrame e salva no Excel
      self.df_reservas = pd.concat([self.df_reservas, new_data], ignore_index=True)
      self.save_to_excel(self.df_reservas, self.reservas_path)
+
 
     def atualizar_reserva(self, id_reserva, nome, data_entrada, data_saida, numero_apartamento, 
                       valor_hospedagem, valor_proprietario, nome_proprietario, quantidade_pessoas,
