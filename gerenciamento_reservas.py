@@ -1,7 +1,8 @@
 import pandas as pd
 from datetime import datetime, timedelta
 import os
-print("Caminho do arquivo em execução:", os.path.abspath(__file__))
+
+
 class GerenciamentoReservas:
     def __init__(self, reservas_path, parceiros_path, proprietarios_path):
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -29,35 +30,29 @@ class GerenciamentoReservas:
     
 
     def calcular_totais_semanal(self):
-        """Calcula os totais semanais com base nas reservas."""
-        today = datetime.today().date()
-        start_week = today - timedelta(days=today.weekday())  # Início da semana
-        end_week = start_week + timedelta(days=6)  # Fim da semana
+     today = datetime.today().date()
+     start_week = today - timedelta(days=today.weekday())  # Início da semana
+     end_week = start_week + timedelta(days=6)  # Fim da semana
 
-        # Converte as colunas 'Data de entrada' e 'Data de saída' para o tipo 'date' para comparação
-        self.df_reservas['Data de entrada'] = pd.to_datetime(self.df_reservas['Data de entrada']).dt.date
-        self.df_reservas['Data de saída'] = pd.to_datetime(self.df_reservas['Data de saída']).dt.date
+     # Converte as colunas 'Data de entrada' e 'Data de saída' para o tipo 'date'
+     self.df_reservas['Data de entrada'] = pd.to_datetime(self.df_reservas['Data de entrada']).dt.date
+     self.df_reservas['Data de saída'] = pd.to_datetime(self.df_reservas['Data de saída']).dt.date
 
-        # Filtrar reservas para a semana atual
-        reservas_semanal = self.df_reservas[
-            (self.df_reservas['Data de entrada'] <= end_week) &
-            (self.df_reservas['Data de saída'] >= start_week)
-        ]
+     # Filtra as reservas da semana atual
+     reservas_semanal = self.df_reservas[
+        (self.df_reservas['Data de entrada'] <= end_week) &
+        (self.df_reservas['Data de saída'] >= start_week)
+     ]
 
-        # Cálculo dos totais semanais com verificação de colunas
-        total_hospedagem = reservas_semanal['Valor da hospedagem'].sum()
-        total_a_pagar = reservas_semanal['A pagar'].sum()
-        
-        # Verifica se a coluna 'Pago' existe antes de acessá-la
-        if 'Pago' in reservas_semanal.columns:
-            total_a_receber_parceiros = reservas_semanal['Pago'].sum()
-        else:
-            print("Aviso: Coluna 'Pago' não encontrada. Definindo total_a_receber_parceiros como 0.")
-            total_a_receber_parceiros = 0  # Define como 0 caso a coluna não exista
+     # Calcula totais incluindo novas colunas
+     total_hospedagem = reservas_semanal['Valor da hospedagem'].sum()
+     total_a_pagar = reservas_semanal['A pagar'].sum()
+     total_a_receber_parceiros = reservas_semanal['A receber de parceiros'].sum()
+     valor_para_proprietario = reservas_semanal['Valor para o proprietário'].sum()
 
-        apartamentos_ocupados = reservas_semanal['Número do apartamento'].nunique()
-    
-        return reservas_semanal, total_hospedagem, total_a_pagar, total_a_receber_parceiros, apartamentos_ocupados
+     apartamentos_ocupados = reservas_semanal['Número do apartamento'].nunique()
+
+     return reservas_semanal, total_hospedagem, total_a_pagar, total_a_receber_parceiros, valor_para_proprietario, apartamentos_ocupados
 
     def load_data(self, file_path):
         """Carrega dados de uma planilha Excel e retorna um DataFrame."""
@@ -138,63 +133,64 @@ class GerenciamentoReservas:
 
     # Métodos para gerenciar reservas
     def adicionar_reserva(self, nome, data_entrada, data_saida, numero_apartamento, 
-                      valor_hospedagem, condominio, bloco, endereco, status, 
+                      valor_hospedagem, valor_proprietario, nome_proprietario, quantidade_pessoas,
+                      condominio, bloco, endereco, status, 
+                      a_receber_parceiros=0.0, a_pagar_parceiros=0.0,
                       email_responsavel=None, telefone_responsavel=None, documento_responsavel=None,
                       pago=0.0, a_pagar=0.0):
-     print("Método adicionar_reserva foi chamado com os argumentos:")
-     print("nome:", nome)
-     print("email_responsavel:", email_responsavel)
-     print("telefone_responsavel:", telefone_responsavel)
-     print("documento_responsavel:", documento_responsavel)
-    
-    # Resto do código para adicionar a reserva
-
-         # Verifica se as colunas de informações do responsável estão presentes e as adiciona se necessário
-     for coluna in ['Email do responsável', 'Telefone do responsável', 'Documento do responsável']:
-            if coluna not in self.df_reservas.columns:
-                self.df_reservas[coluna] = None
-
-         # Cria o novo registro da reserva com todas as informações, incluindo as do responsável
+    # Dados da nova reserva com todas as colunas incluídas
      new_data = pd.DataFrame({
-            'Nome do hóspede': [nome],
-            'Data de entrada': [data_entrada],
-            'Data de saída': [data_saida],
-            'Número do apartamento': [numero_apartamento],
-            'Valor da hospedagem': [valor_hospedagem],
-            'Nome do Condomínio': [condominio],
-            'Bloco': [bloco],
-            'Endereço': [endereco],
-            'Status': [status],
-            'Pago': [pago],
-            'A pagar': [a_pagar],
-            'Email do responsável': [email_responsavel],
-            'Telefone do responsável': [telefone_responsavel],
-            'Documento do responsável': [documento_responsavel]
-         })
+        'Nome do hóspede': [nome],
+        'Data de entrada': [data_entrada],
+        'Data de saída': [data_saida],
+        'Número do apartamento': [numero_apartamento],
+        'Valor da hospedagem': [valor_hospedagem],
+        'Valor para o proprietário': [valor_proprietario],
+        'Nome do proprietário': [nome_proprietario],
+        'Quantidade de pessoas': [quantidade_pessoas],
+        'Nome do Condomínio': [condominio],
+        'Bloco': [bloco],
+        'Endereço': [endereco],
+        'Status': [status],
+        'Pago': [pago],
+        'A pagar': [a_pagar],
+        'A receber de parceiros': [a_receber_parceiros],
+        'A pagar para parceiros': [a_pagar_parceiros],
+        'Email do responsável': [email_responsavel],
+        'Telefone do responsável': [telefone_responsavel],
+        'Documento do responsável': [documento_responsavel]
+    })
 
-         # Adiciona a nova reserva ao DataFrame de reservas e salva
+    # Adiciona a nova reserva ao DataFrame e salva no Excel
      self.df_reservas = pd.concat([self.df_reservas, new_data], ignore_index=True)
      self.save_to_excel(self.df_reservas, self.reservas_path)
 
     def atualizar_reserva(self, id_reserva, nome, data_entrada, data_saida, numero_apartamento, 
-                      valor_hospedagem, condominio, bloco, endereco, status, 
-                      pago, a_pagar, email_responsavel=None, telefone_responsavel=None, documento_responsavel=None):
+                      valor_hospedagem, valor_proprietario, nome_proprietario, quantidade_pessoas,
+                      condominio, bloco, endereco, status, 
+                      a_receber_parceiros, a_pagar_parceiros, pago, a_pagar, 
+                      email_responsavel=None, telefone_responsavel=None, documento_responsavel=None):
      """Atualiza uma reserva específica no DataFrame e salva no Excel."""
      if id_reserva in self.df_reservas.index:
-        # Atualiza informações básicas da reserva
+        # Atualiza as informações da reserva, incluindo as novas colunas
         self.df_reservas.at[id_reserva, 'Nome do hóspede'] = nome
         self.df_reservas.at[id_reserva, 'Data de entrada'] = data_entrada
         self.df_reservas.at[id_reserva, 'Data de saída'] = data_saida
         self.df_reservas.at[id_reserva, 'Número do apartamento'] = numero_apartamento
         self.df_reservas.at[id_reserva, 'Valor da hospedagem'] = valor_hospedagem
+        self.df_reservas.at[id_reserva, 'Valor para o proprietário'] = valor_proprietario
+        self.df_reservas.at[id_reserva, 'Nome do proprietário'] = nome_proprietario
+        self.df_reservas.at[id_reserva, 'Quantidade de pessoas'] = quantidade_pessoas
         self.df_reservas.at[id_reserva, 'Nome do Condomínio'] = condominio
         self.df_reservas.at[id_reserva, 'Bloco'] = bloco
         self.df_reservas.at[id_reserva, 'Endereço'] = endereco
         self.df_reservas.at[id_reserva, 'Status'] = status
+        self.df_reservas.at[id_reserva, 'A receber de parceiros'] = a_receber_parceiros
+        self.df_reservas.at[id_reserva, 'A pagar para parceiros'] = a_pagar_parceiros
         self.df_reservas.at[id_reserva, 'Pago'] = pago
         self.df_reservas.at[id_reserva, 'A pagar'] = a_pagar
 
-        # Verifica e atualiza as informações do responsável, se fornecidas
+        # Atualiza as informações do responsável, se fornecidas
         if email_responsavel is not None:
             self.df_reservas.at[id_reserva, 'Email do responsável'] = email_responsavel
         if telefone_responsavel is not None:
