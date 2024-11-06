@@ -91,19 +91,37 @@ def exibir_detalhamento_reservas(reservas):
                              'Nome do Condomínio', 'Bloco', 'Endereço']])
 
 def adicionar_nova_reserva(reservas):
-    
-     with st.expander("Adicionar Nova Reserva"):
+    with st.expander("Adicionar Nova Reserva"):
         # Dados básicos da reserva
         nome = st.text_input("Nome do Hóspede", key="nome_hospede_novo")
         data_entrada = st.date_input("Data de Entrada", date.today(), key="data_entrada_novo")
         data_saida = st.date_input("Data de Saída", date.today() + timedelta(days=1), key="data_saida_novo")
         numero_apartamento = st.number_input("Número do Apartamento", min_value=1, step=1, key="numero_apartamento_novo")
         valor_hospedagem = st.number_input("Valor da Hospedagem", min_value=0.0, step=0.01, key="valor_hospedagem_novo")
+        valor_proprietario = st.number_input("Valor para o Proprietário", min_value=0.0, step=0.01, key="valor_proprietario_novo")
+        quantidade_pessoas = st.number_input("Quantidade de Pessoas", min_value=1, step=1, key="quantidade_pessoas_novo")
         condominio = st.text_input("Nome do Condomínio", key="condominio_novo")
         bloco = st.text_input("Bloco", key="bloco_novo")
         endereco = st.text_input("Endereço", key="endereco_novo")
-        status = st.selectbox("Status do Pagamento", ["Paga", "A Pagar"], key="status_pagamento_novo")
         
+        # Campo de valor do pagamento
+        valor_pagamento = st.number_input("Valor do Pagamento", min_value=0.0, step=0.01, key="valor_pagamento_novo")
+        
+        # Seletor de status do pagamento com uma `key` única
+        status_pagamento = st.selectbox("Status do Pagamento", ["Paga", "A Pagar"], key="status_pagamento_novo")
+
+        # Exibe o campo "Valor Faltante para Pagar" se o status for "A Pagar"
+        valor_faltante = 0.0  # Valor padrão
+        if status_pagamento == "A Pagar":
+            valor_faltante = st.number_input("Valor Faltante para Pagar", min_value=0.0, step=0.01, key="valor_faltante_novo")
+
+        # Informações de valores com parceiros
+        a_receber_parceiros = st.number_input("A Receber de Parceiros", min_value=0.0, step=0.01, key="a_receber_parceiros_novo")
+        a_pagar_parceiros = st.number_input("A Pagar para Parceiros", min_value=0.0, step=0.01, key="a_pagar_parceiros_novo")
+
+        # Informações do proprietário
+        nome_proprietario = st.text_input("Nome do Proprietário", key="nome_proprietario_novo")
+
         # Informações do responsável
         email_responsavel = st.text_input("Email do Responsável", key="email_responsavel_novo")
         telefone_responsavel = st.text_input("Telefone do Responsável", key="telefone_responsavel_novo")
@@ -111,10 +129,15 @@ def adicionar_nova_reserva(reservas):
 
         # Botão para adicionar a reserva com as novas informações
         if st.button("Adicionar Reserva", key="botao_adicionar_reserva"):
+            # Usa o valor do pagamento e o valor faltante para atualizar a reserva
             reservas.adicionar_reserva(
                 nome, data_entrada, data_saida, numero_apartamento, valor_hospedagem, 
-                condominio, bloco, endereco, status, 
-                email_responsavel=email_responsavel, telefone_responsavel=telefone_responsavel, documento_responsavel=documento_responsavel
+                valor_proprietario, nome_proprietario, quantidade_pessoas,
+                condominio, bloco, endereco, status_pagamento, 
+                a_receber_parceiros, a_pagar_parceiros,
+                email_responsavel=email_responsavel, telefone_responsavel=telefone_responsavel, documento_responsavel=documento_responsavel,
+                pago=valor_pagamento if status_pagamento == "Paga" else 0.0,
+                a_pagar=valor_faltante if status_pagamento == "A Pagar" else 0.0
             )
             st.success("Nova reserva adicionada com sucesso!")
 
@@ -130,11 +153,17 @@ def editar_reservas(reservas):
     data_saida = st.date_input("Data de Saída", reserva_selecionada['Data de saída'], key="data_saida")
     numero_apartamento = st.number_input("Número do Apartamento", value=int(reserva_selecionada['Número do apartamento']), key="numero_apartamento")
     valor_hospedagem = st.number_input("Valor da Hospedagem", value=float(reserva_selecionada['Valor da hospedagem']), key="valor_hospedagem")
+    valor_proprietario = st.number_input("Valor para o Proprietário", value=float(reserva_selecionada['Valor para o proprietário']), key="valor_proprietario")
+    quantidade_pessoas = st.number_input("Quantidade de Pessoas", value=int(reserva_selecionada['Quantidade de pessoas']), key="quantidade_pessoas")
     condominio = st.text_input("Nome do Condomínio", reserva_selecionada['Nome do Condomínio'], key="condominio")
     bloco = st.text_input("Bloco", reserva_selecionada['Bloco'], key="bloco")
     endereco = st.text_input("Endereço", reserva_selecionada['Endereço'], key="endereco")
     
-    # Campos para valores pagos e a pagar
+    # Campos de valores pagos e a pagar para parceiros
+    a_receber_parceiros = st.number_input("A Receber de Parceiros", value=float(reserva_selecionada.get('A receber de parceiros', 0)), key="a_receber_parceiros")
+    a_pagar_parceiros = st.number_input("A Pagar para Parceiros", value=float(reserva_selecionada.get('A pagar para parceiros', 0)), key="a_pagar_parceiros")
+    
+    # Campos de pagamento
     pago = st.number_input("Pago", value=float(reserva_selecionada.get('Pago', 0)), key="pago")
     a_pagar = st.number_input("A Pagar", value=float(reserva_selecionada.get('A pagar', 0)), key="a_pagar")
 
@@ -144,6 +173,9 @@ def editar_reservas(reservas):
     index_status = status_lista.index(status_atual) if status_atual in status_lista else 0
     status = st.selectbox("Status do Pagamento", status_lista, index=index_status, key="status_pagamento")
 
+    # Informações do proprietário
+    nome_proprietario = st.text_input("Nome do Proprietário", reserva_selecionada.get('Nome do proprietário', ''), key="nome_proprietario")
+    
     # Campos para as informações do responsável
     email_responsavel = st.text_input("Email do Responsável", reserva_selecionada.get('Email do responsável', ''), key="email_responsavel")
     telefone_responsavel = st.text_input("Telefone do Responsável", reserva_selecionada.get('Telefone do responsável', ''), key="telefone_responsavel")
@@ -153,12 +185,14 @@ def editar_reservas(reservas):
     if st.button("Salvar Alterações", key="salvar_alteracoes_reserva"):
         reservas.atualizar_reserva(
             id_reserva, nome, data_entrada, data_saida, numero_apartamento, 
-            valor_hospedagem, condominio, bloco, endereco, status, 
-            pago, a_pagar, email_responsavel=email_responsavel, 
-            telefone_responsavel=telefone_responsavel, documento_responsavel=documento_responsavel
+            valor_hospedagem, valor_proprietario, nome_proprietario, quantidade_pessoas,
+            condominio, bloco, endereco, status, 
+            a_receber_parceiros, a_pagar_parceiros, pago, a_pagar, 
+            email_responsavel=email_responsavel, 
+            telefone_responsavel=telefone_responsavel, 
+            documento_responsavel=documento_responsavel
         )
         st.success("Reserva atualizada com sucesso!")
-
 
 
 def adicionar_novo_parceiro(reservas):
