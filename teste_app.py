@@ -12,14 +12,16 @@ def dashboard_home(reservas):
     st.title("Gerenciamento de Reserva - Home")
     st.write("Bem-vindo ao sistema de gerenciamento de reservas!")
     
-    st.subheader("Tabela de Reservas")
-    st.dataframe(reservas.df_reservas)  # Exibe a tabela de reservas
+    st.subheader("Reservas em Ordem Crescente de Data de Entrada")
+    reservas_ordenadas = reservas.get_reservas_ordenadas()  # Obtem todas as reservas em ordem crescente
+    st.dataframe(reservas_ordenadas)  # Exibe a tabela das reservas ordenadas
 
     st.subheader("Tabela de Parceiros")
     st.dataframe(reservas.df_parceiros)  # Exibe a tabela de parceiros
 
     st.subheader("Tabela de Proprietários")
     st.dataframe(reservas.df_proprietarios)  # Exibe a tabela de proprietários
+
 
 # Função para exibir a página de relatórios
 def relatorios(reservas):
@@ -193,6 +195,7 @@ def editar_reservas(reservas):
             documento_responsavel=documento_responsavel
         )
         st.success("Reserva atualizada com sucesso!")
+
 
 
 def adicionar_novo_parceiro(reservas):
