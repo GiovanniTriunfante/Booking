@@ -228,7 +228,18 @@ class GerenciamentoReservas:
      else:
         print(f"Reserva com ID {id_reserva} não encontrada.")
 
+    def get_reservas_ordenadas(self):
+     """Retorna todas as reservas em ordem crescente de data de entrada."""
+     # Converte a coluna 'Data de entrada' para datetime, caso ainda não esteja
+     self.df_reservas['Data de entrada'] = pd.to_datetime(self.df_reservas['Data de entrada'], errors='coerce')
+    
+     # Remove entradas com datas inválidas e ordena pela data de entrada em ordem crescente
+     reservas_ordenadas = self.df_reservas.dropna(subset=['Data de entrada'])
+     reservas_ordenadas = reservas_ordenadas.sort_values(by='Data de entrada', ascending=True)
+    
+     return reservas_ordenadas
 
+    
     def check_columns(self, df, required_columns):
         """Verifica se as colunas necessárias estão presentes no DataFrame."""
         missing_columns = [col for col in required_columns if col not in df.columns]
